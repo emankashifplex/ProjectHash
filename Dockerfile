@@ -1,14 +1,19 @@
-# Use the official Go image as the base image
-FROM golang:1.17
+# Stage 1: Build 
+FROM golang:1.17 AS build
 
-# Set the working directory inside the container
 WORKDIR /app
-
-# Copy the Go application source code
 COPY . .
 
-# Build the Go application
-RUN go build -o ProjectHash
+RUN go build -o myapp
 
-# Set the entry point for the container
-ENTRYPOINT ["./ProjectHash"]
+# Stage 2: Minimal runtime image
+FROM alpine:latest
+
+WORKDIR /app
+
+COPY --from=build /app/myapp .
+
+EXPOSE 8080
+EXPOSE 9090
+
+CMD ["./myapp"]

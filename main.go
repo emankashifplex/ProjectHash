@@ -3,28 +3,27 @@ package main
 import (
 	"fmt"
 	"net"
+
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 
 	controllers "ProjectHash/controllers"
-	"ProjectHash/pb"
 	"ProjectHash/services"
 
 	"github.com/gorilla/mux"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
 )
 
 func main() {
 	svc := services.NewPasswordService()
 
-	httpServer := NewHTTPServer(svc) // Use the NewHTTPServer function directly
-	grpcServer := NewGRPCServer(svc) // Use the NewGRPCServer function directly
+	httpServer := NewHTTPServer(svc)
+	grpcServer := services.NewGRPCServer(svc)
 
 	go startHTTPServer(httpServer)
-	go startGRPCServer(grpcServer, svc)
+	go startGRPCServer(grpcServer)
 
 	waitForShutdown()
 }
@@ -38,20 +37,17 @@ func startHTTPServer(server *http.Server) {
 	}
 }
 
-func startGRPCServer(server *grpc.Server, svc services.PasswordService) {
-	pb.RegisterPasswordServiceServer(server, services.NewGRPCService(svc))
-	reflection.Register(server)
-
+func startGRPCServer(server *grpc.Server) {
 	grpcAddr := ":9090"
 	lis, err := net.Listen("tcp", grpcAddr)
 	if err != nil {
-		fmt.Println("Failed to listen:", err)
+		fmt.Println("Error starting gRPC server:", err)
 		return
 	}
-
 	fmt.Println("gRPC server is running on http://localhost" + grpcAddr)
-	if err := server.Serve(lis); err != nil {
-		fmt.Println("Failed to serve:", err)
+	err = server.Serve(lis)
+	if err != nil {
+		fmt.Println("Error serving gRPC:", err)
 	}
 }
 
@@ -72,11 +68,4 @@ func NewHTTPServer(svc services.PasswordService) *http.Server {
 		Handler: router,
 	}
 	return httpServer
-}
-
-func NewGRPCServer(svc services.PasswordService) *grpc.Server {
-	grpcServer := grpc.NewServer()
-	pb.RegisterPasswordServiceServer(grpcServer, services.NewGRPCService(svc))
-	reflection.Register(grpcServer)
-	return grpcServer
 }
