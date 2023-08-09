@@ -67,7 +67,7 @@ To hash a password using gRPC, you can use tools like grpcurl or create a client
 grpcurl -plaintext -d '{"password": "yourpassword"}' localhost:9090 passwordpb.PasswordService.HashPassword
 ```
 
-### Validating a Password
+#### Validating a Password
 
 ```bash
 grpcurl -plaintext -d '{"hashed_password": "yourhashedpassword", "password": "yourpassword"}' localhost:9090 passwordpb.PasswordService.ValidatePassword
